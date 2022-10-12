@@ -1,0 +1,38 @@
+---
+# tasks file for sqls
+- name: Check the database availability
+  become: true
+  become_user: postgres
+  shell: pg_isready
+
+- name: Ansible check for the remote stage directory
+  become: true
+  become_user: postgres
+  stat:
+    path: /var/lib/pgsql/stage/scripts
+  register: sql_directory
+
+- name: Output if the directory exist on the server
+  become: true
+  become_user: postgres
+  debug:
+    msg: "Staging directory exist!"
+  when: sql_directory.stat.exists
+
+- name: Create SQL staging directory
+  become: true
+  become_user: postgres
+  file:
+    path: /var/lib/pgsql/stage/scripts
+  when: sql_directory.stat.exists == false
+
+- name: Copy the sql file to remote server
+  become: true
+  become_user: postgres
+  src: files/sqlscript_01.sql
+  desc: /var/lib/pgsql/stage/scripts
+
+- name: Execute the SQL script on the PostgreSQL database
+  become: true
+  become_user: postgres
+  shell: psql -c "SELECT 1;"
